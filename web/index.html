@@ -33,7 +33,94 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!-- 自定义 bootstrap 见 web/flutter_bootstrap.js（使用本地 CanvasKit） -->
+  <style>
+    #boot-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      background: #FFF8F0;
+      color: #FF7043;
+      font-size: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      z-index: 9999;
+    }
+    #boot-loading .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #FFE0B2;
+      border-top-color: #FF7043;
+      border-radius: 50%;
+      animation: boot-spin 0.9s linear infinite;
+    }
+    #boot-loading .err {
+      color: #C62828;
+      font-size: 12px;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 50vh;
+      overflow: auto;
+    }
+    @keyframes boot-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+  <div id="boot-loading">
+    <div class="spinner"></div>
+    <div id="boot-text">正在加载倒数日…</div>
+  </div>
+  <script>
+    (function () {
+      // 清理旧版本遗留的 Service Worker 与缓存，避免手机端加载到失败的旧资源
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        });
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+
+      var box = document.getElementById('boot-loading');
+      var text = document.getElementById('boot-text');
+
+      // Flutter 渲染出画面后移除加载提示
+      var timer = setInterval(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane, flt-scene-host')) {
+          if (box && box.parentNode) box.parentNode.removeChild(box);
+          clearInterval(timer);
+        }
+      }, 300);
+
+      // 较慢时给出提示
+      setTimeout(function () {
+        if (box && box.parentNode && text) {
+          text.textContent = '加载较慢，请检查网络连接…';
+        }
+      }, 20000);
+
+      // 捕获错误，便于在手机上定位白屏原因
+      window.addEventListener('error', function (e) {
+        if (!text) return;
+        text.className = 'err';
+        text.textContent = '加载失败：' + (e && e.message ? e.message : '未知错误');
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        if (!text) return;
+        text.className = 'err';
+        var r = e && e.reason;
+        text.textContent = '加载失败：' + (r && r.message ? r.message : r);
+      });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
