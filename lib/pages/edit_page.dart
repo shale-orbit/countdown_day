@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/countdown_event.dart';
 import '../services/storage_service.dart';
 import '../utils/date_util.dart';
@@ -41,8 +42,7 @@ class _EditPageState extends State<EditPage> {
     final event = widget.event;
     _titleController = TextEditingController(text: event?.title ?? '');
     _noteController = TextEditingController(text: event?.note ?? '');
-    _selectedDate =
-        event != null ? DateUtil.parseDate(event.targetDate) : null;
+    _selectedDate = event != null ? DateUtil.parseDate(event.targetDate) : null;
     _selectedColor = event?.color ?? _colorOptions[0];
     _isPinned = event?.isPinned ?? false;
   }
@@ -85,9 +85,8 @@ class _EditPageState extends State<EditPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择目标日期')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请选择目标日期')));
       return;
     }
 
@@ -179,6 +178,19 @@ class _EditPageState extends State<EditPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Hero 目标：顶部色带（卡片左侧色条飞入并展开）；
+            // 同时是隐式动画——颜色随选中值平滑过渡
+            Hero(
+              tag: 'event-color-${widget.event?.id ?? 'new'}',
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+                height: 8,
+                width: double.infinity,
+                color: Color(_selectedColor),
+              ),
+            ),
+            const SizedBox(height: 24),
             // 标题
             _buildSectionLabel('标题'),
             TextFormField(
@@ -236,19 +248,32 @@ class _EditPageState extends State<EditPage> {
                 final isSelected = colorValue == _selectedColor;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedColor = colorValue),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Color(colorValue),
-                      shape: BoxShape.circle,
-                      border: isSelected
-                          ? Border.all(color: const Color(0xFF3E2723), width: 3)
+                  // 隐式动画：选中时缩放放大，无需手动管理控制器
+                  child: AnimatedScale(
+                    scale: isSelected ? 1.2 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Color(colorValue),
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: const Color(0xFF3E2723),
+                                width: 3,
+                              )
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
-                    child: isSelected
-                        ? const Icon(Icons.check, color: Colors.white, size: 20)
-                        : null,
                   ),
                 );
               }).toList(),
@@ -267,10 +292,7 @@ class _EditPageState extends State<EditPage> {
                 children: [
                   const Text(
                     '置顶',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF3E2723),
-                    ),
+                    style: TextStyle(fontSize: 16, color: Color(0xFF3E2723)),
                   ),
                   Switch(
                     value: _isPinned,
@@ -310,8 +332,7 @@ class _EditPageState extends State<EditPage> {
       hintStyle: const TextStyle(color: Color(0xFFA1887F)),
       filled: true,
       fillColor: Colors.white,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,

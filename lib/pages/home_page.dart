@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/countdown_event.dart';
 import '../services/storage_service.dart';
 import '../widgets/countdown_card.dart';
@@ -89,10 +90,7 @@ class _HomePageState extends State<HomePage>
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // 自定义路由过渡：缩放 + 淡入
           return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
-            ),
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
             child: ScaleTransition(
               scale: CurvedAnimation(
                 parent: animation,
@@ -102,7 +100,8 @@ class _HomePageState extends State<HomePage>
             ),
           );
         },
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 500),
+        reverseTransitionDuration: const Duration(milliseconds: 500),
       ),
     );
     // 返回后刷新
@@ -164,18 +163,13 @@ class _HomePageState extends State<HomePage>
                 child: Center(child: CircularProgressIndicator()),
               )
             else if (_events.isEmpty)
-              SliverFillRemaining(
-                child: _buildEmptyState(),
-              )
+              SliverFillRemaining(child: _buildEmptyState())
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final event = _events[index];
-                    return _buildAnimatedCard(event, index);
-                  },
-                  childCount: _events.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final event = _events[index];
+                  return _buildAnimatedCard(event, index);
+                }, childCount: _events.length),
               ),
           ],
         ),
@@ -205,10 +199,7 @@ class _HomePageState extends State<HomePage>
           ),
         );
       },
-      child: CountdownCard(
-        event: event,
-        onTap: () => _openEditPage(event),
-      ),
+      child: CountdownCard(event: event, onTap: () => _openEditPage(event)),
     );
   }
 
@@ -226,18 +217,12 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: 16),
           const Text(
             '还没有倒数日',
-            style: TextStyle(
-              fontSize: 18,
-              color: Color(0xFF8D6E63),
-            ),
+            style: TextStyle(fontSize: 18, color: Color(0xFF8D6E63)),
           ),
           const SizedBox(height: 8),
           const Text(
             '点击右上角 + 添加你的第一个倒数日',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFFA1887F),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFFA1887F)),
           ),
         ],
       ),
