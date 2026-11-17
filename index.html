@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/countdown_day/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="countdown_day">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>countdown_day</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <style>
+    #boot-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      background: #FFF8F0;
+      color: #FF7043;
+      font-size: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      z-index: 9999;
+    }
+    #boot-loading .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #FFE0B2;
+      border-top-color: #FF7043;
+      border-radius: 50%;
+      animation: boot-spin 0.9s linear infinite;
+    }
+    #boot-loading .err {
+      color: #C62828;
+      font-size: 12px;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 50vh;
+      overflow: auto;
+    }
+    @keyframes boot-spin {
+      to { transform: rotate(360deg); }
+    }
+    #wx-tip {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 32px;
+      background: #FFF8F0;
+      color: #3E2723;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      z-index: 10000;
+    }
+    #wx-tip .wx-icon { font-size: 56px; }
+    #wx-tip .wx-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #FF7043;
+    }
+    #wx-tip .wx-desc {
+      font-size: 15px;
+      line-height: 1.9;
+      color: #8D6E63;
+    }
+    #wx-tip .wx-desc b { color: #FF7043; }
+  </style>
+  <div id="boot-loading">
+    <div class="spinner"></div>
+    <div id="boot-text">正在加载倒数日…</div>
+  </div>
+  <div id="wx-tip">
+    <div class="wx-icon">📱</div>
+    <div class="wx-title">请在浏览器中打开</div>
+    <div class="wx-desc">
+      微信内置浏览器无法运行此应用<br>
+      请点击右上角 <b>···</b> 选择<br>
+      <b>「在浏览器打开」</b>
+    </div>
+  </div>
+  <script>
+    (function () {
+      // 微信内置浏览器（X5 内核）不支持 Flutter Web 所需的 WebAssembly / WebGL，
+      // 直接展示引导提示，避免下载数 MB 资源后仍然白屏
+      if (/micromessenger|wechat/i.test(navigator.userAgent)) {
+        var bootBox = document.getElementById('boot-loading');
+        if (bootBox) bootBox.style.display = 'none';
+        var wxTip = document.getElementById('wx-tip');
+        if (wxTip) wxTip.style.display = 'flex';
+        return;
+      }
+      // 清理旧版本遗留的 Service Worker 与缓存，避免手机端加载到失败的旧资源
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) { reg.unregister(); });
+        });
+      }
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+
+      var box = document.getElementById('boot-loading');
+      var text = document.getElementById('boot-text');
+
+      // Flutter 渲染出画面后移除加载提示
+      var timer = setInterval(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane, flt-scene-host')) {
+          if (box && box.parentNode) box.parentNode.removeChild(box);
+          clearInterval(timer);
+        }
+      }, 300);
+
+      // 较慢时给出提示
+      setTimeout(function () {
+        if (box && box.parentNode && text) {
+          text.textContent = '加载较慢，请检查网络连接…';
+        }
+      }, 20000);
+
+      // 捕获错误，便于在手机上定位白屏原因
+      window.addEventListener('error', function (e) {
+        if (!text) return;
+        text.className = 'err';
+        text.textContent = '加载失败：' + (e && e.message ? e.message : '未知错误');
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        if (!text) return;
+        text.className = 'err';
+        var r = e && e.reason;
+        text.textContent = '加载失败：' + (r && r.message ? r.message : r);
+      });
+
+      // 非微信环境才加载 Flutter 引擎，避免微信中白白下载数 MB 资源
+      var bootScript = document.createElement('script');
+      bootScript.src = 'flutter_bootstrap.js';
+      bootScript.async = true;
+      document.body.appendChild(bootScript);
+    })();
+  </script>
+</body>
+</html>
